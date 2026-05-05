@@ -1,0 +1,51 @@
+services:
+  app:
+    build: .
+    container_name: shortener-app
+    restart: unless-stopped
+    mem_limit: 256m
+    environment:
+      DB_PATH: /data/shortener.db
+      ADMIN_USER: ${ADMIN_USER}
+      ADMIN_PASS: ${ADMIN_PASS}
+      PUBLIC_DOMAIN: ${PUBLIC_DOMAIN}
+      PORT: 3000
+    volumes:
+      - data-volume:/data
+    networks:
+      - shortener-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: shortener-caddy
+    restart: unless-stopped
+    mem_limit: 128m
+    depends_on:
+      - app
+    ports:
+      - "80:80"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - shortener-net
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  data-volume:
+  caddy_data:
+  caddy_config:
+
+networks:
+  shortener-net:
+    driver: bridge

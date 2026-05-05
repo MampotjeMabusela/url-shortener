@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WriteNow URL Shortener</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <div class="background"></div>
+  <main class="shell">
+    <section class="hero card">
+      <h1>WriteNow Link Studio</h1>
+      <p>Shorten links, track clicks, and manage your URL portfolio securely.</p>
+      <form id="shorten-form" class="shorten-form">
+        <input type="url" name="long_url" placeholder="https://example.com/very/long/link" required>
+        <button type="submit">Create Short Link</button>
+      </form>
+      <div id="result" class="result"></div>
+    </section>
+
+    <section class="card">
+      <div class="table-header">
+        <h2>All Links</h2>
+        <p>Domain: <strong><%= publicDomain %></strong></p>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>Slug</th><th>Long URL</th><th>Clicks</th><th>Created</th></tr>
+          </thead>
+          <tbody>
+            <% if (links.length === 0) { %>
+              <tr><td colspan="4" class="empty">No links yet. Create your first short URL.</td></tr>
+            <% } %>
+            <% links.forEach((link) => { %>
+              <tr>
+                <td><a href="/<%= link.slug %>" target="_blank" rel="noreferrer">/<%= link.slug %></a></td>
+                <td class="long-url"><%= link.long_url %></td>
+                <td><%= link.clicks %></td>
+                <td><%= link.created_at %></td>
+              </tr>
+            <% }); %>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const form = document.getElementById("shorten-form");
+    const result = document.getElementById("result");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+      result.textContent = "Creating link...";
+      result.className = "result";
+
+      const formData = new FormData(form);
+      const response = await fetch("/api/shorten", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ long_url: formData.get("long_url") }),
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        result.classList.add("ok");
+        result.innerHTML = `Short URL ready: <a href="${data.short_url}" target="_blank" rel="noreferrer">${data.short_url}</a>`;
+        form.reset();
+        window.setTimeout(() => window.location.reload(), 800);
+      } else {
+        result.classList.add("error");
+        result.textContent = data.error || "Request failed";
+      }
+    });
+  </script>
+</body>
+</html>
